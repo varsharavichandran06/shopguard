@@ -6,7 +6,7 @@ The agent will handle returns, exchanges, cancellations and address changes. Eve
 
 ## Status
 
-Foundation only: the store database, the business rules and the order actions, with tests.
+Store database, business rules, order actions and an MCP server that exposes them as tools.
 
 ```
 data/
@@ -15,6 +15,7 @@ data/
 shopguard/
   rules.py        business rules as pure functions
   actions.py      order logic: verify, look up, return, exchange, cancel, change address
+  mcp_server.py   MCP server exposing 8 order tools (official MCP Python SDK)
   config.py       settings
   db.py           SQLite helper
 tests/            rule and action tests, no API key needed
@@ -32,3 +33,12 @@ cp .env.example .env
 python -m data.seed                # builds data/store.db
 python -m pytest -q
 ```
+
+## Try the MCP server
+
+```bash
+python -m shopguard.mcp_server                                   # speaks MCP over stdio
+npx @modelcontextprotocol/inspector python -m shopguard.mcp_server   # poke the tools by hand
+```
+
+The server reads `DB_PATH` (which store copy to use) and `SESSION_PATH` (a small JSON file holding the verified customer). All rules are enforced inside the tools.
