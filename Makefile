@@ -1,4 +1,4 @@
-.PHONY: install seed test chat
+.PHONY: install seed test chat app docker
 
 install:
 	python -m pip install -r requirements.txt
@@ -11,3 +11,9 @@ test:
 
 chat:
 	python chat_cli.py
+
+app:
+	streamlit run app.py
+
+docker:
+	docker build -t shopguard . && docker run --rm -p 8501:8501 --env-file .env shopguard

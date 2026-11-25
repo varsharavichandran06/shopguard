@@ -13,6 +13,7 @@ data/
   schema.sql      store tables (money in cents, fixed store clock)
   seed.py         builds store.db, same output every run
   policy/*.md     store policy docs the agent searches
+  policy/*.md     store policy docs the agent searches
 shopguard/
   rules.py        business rules as pure functions
   actions.py      order logic: verify, look up, return, exchange, cancel, change address
@@ -21,8 +22,10 @@ shopguard/
   guardrails.py   input guardrail: card numbers and prompt injection
   prompts.py      short behavior prompt (rules are not in here)
   agent.py        OpenAI Agents SDK agent, human handoff, Conversation wrapper
+  tracing.py      traces to the OpenAI dashboard, optional Langfuse
   config.py       settings
   db.py           SQLite helper
+app.py            Streamlit chat UI with a live store view
 chat_cli.py       terminal chat
 tests/            rule, action, search and end-to-end tests, no API key needed
 ```
@@ -38,7 +41,8 @@ pip install -r requirements.txt
 cp .env.example .env               # then paste your OPENAI_API_KEY into .env
 python -m data.seed                # builds data/store.db
 python -m pytest -q                # free, no key needed
-python chat_cli.py                 # chat in the terminal
+streamlit run app.py               # chat UI at http://localhost:8501
+python chat_cli.py                 # or chat in the terminal
 ```
 
 Demo customers (verify with email and zip):
@@ -60,3 +64,39 @@ npx @modelcontextprotocol/inspector python -m shopguard.mcp_server   # poke the 
 ```
 
 The server reads `DB_PATH` (which store copy to use) and `SESSION_PATH` (a small JSON file holding the verified customer). All rules are enforced inside the tools.
+
+## Deploy
+
+### Option 1: Streamlit Community Cloud (free)
+
+1. Push this repo to GitHub.
+2. Go to share.streamlit.io, click New app, pick the repo and `app.py`.
+3. In Advanced settings, Secrets, add `OPENAI_API_KEY = "sk-..."`. Add `APP_PASSWORD = "..."` if you want a password gate.
+4. Deploy. The app builds the store on first start.
+
+### Option 2: Docker or Google Cloud Run
+
+```bash
+docker build -t shopguard .
+docker run --rm -p 8501:8501 --env-file .env shopguard
+```
+
+```bash
+gcloud run deploy shopguard --source . --region us-central1 --allow-unauthenticated \
+  --set-env-vars OPENAI_API_KEY=sk-...,DAILY_TURN_BUDGET=200 --memory 1Gi
+```
+
+For a real deploy, store the key in Secret Manager instead of a plain env var.
+
+The public app has a per chat turn limit, a daily turn budget and a 2000 character input cap, so strangers cannot run up your OpenAI bill. Also set a monthly limit in your OpenAI account.
+
+## Tracing
+
+By default the OpenAI Agents SDK sends a trace of every run (each model call, tool call, handoff and guardrail) to the Traces page of your OpenAI dashboard. Nothing to set up.
+
+Optional: send the same traces to Langfuse.
+
+```bash
+pip install -r requirements-tracing.txt
+# set LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST in .env
+```

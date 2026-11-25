@@ -1,0 +1,8 @@
+.env
+.venv
+tmp
+runs
+data/store.db
+.git
+__pycache__
+.pytest_cache

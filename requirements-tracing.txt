@@ -1,0 +1,3 @@
+# Optional: send Agents SDK traces to Langfuse through OpenTelemetry.
+langfuse>=3
+openinference-instrumentation-openai-agents
