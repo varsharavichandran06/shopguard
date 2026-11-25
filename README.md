@@ -6,22 +6,25 @@ The agent handles returns, exchanges, cancellations and address changes. Every b
 
 ## Status
 
-A basic working chatbot: it verifies a customer, looks up orders and handles returns, exchanges, cancellations and address changes through MCP tools.
+A working support chatbot. It verifies a customer, handles returns, exchanges, cancellations and address changes through MCP tools, answers policy questions with citations, blocks card numbers and prompt injection, and hands hard cases to a human.
 
 ```
 data/
   schema.sql      store tables (money in cents, fixed store clock)
   seed.py         builds store.db, same output every run
+  policy/*.md     store policy docs the agent searches
 shopguard/
   rules.py        business rules as pure functions
   actions.py      order logic: verify, look up, return, exchange, cancel, change address
   mcp_server.py   MCP server exposing 8 order tools (official MCP Python SDK)
+  search.py       BM25 + embeddings, fused with RRF, relevance floor, citations
+  guardrails.py   input guardrail: card numbers and prompt injection
   prompts.py      short behavior prompt (rules are not in here)
-  agent.py        OpenAI Agents SDK agent and a Conversation wrapper
+  agent.py        OpenAI Agents SDK agent, human handoff, Conversation wrapper
   config.py       settings
   db.py           SQLite helper
 chat_cli.py       terminal chat
-tests/            rule, action and end-to-end tests, no API key needed
+tests/            rule, action, search and end-to-end tests, no API key needed
 ```
 
 ## Run it

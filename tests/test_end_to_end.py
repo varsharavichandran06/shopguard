@@ -1,7 +1,7 @@
 """End to end with no API key.
 
 The agent's model is the SDK's ScriptedModel, so model replies are fixed, but everything else
-is real: the MCP server subprocess, the tools and rules, and the session file.
+is real: the MCP server subprocess, the tools and rules, the guardrail and the session file.
 """
 import asyncio
 
@@ -33,11 +33,13 @@ def test_conversation_over_real_mcp(tmp_path, seeded_store):
         # new MCP process for turn 2: identity survives in the session file
         async with Conversation(db, session, history=c.history, model=model) as c2:
             t2 = await c2.send("yes please")
-        return t1, t2
+            t3 = await c2.send("here is my card 4242 4242 4242 4242")
+        return t1, t2, t3
 
-    t1, t2 = asyncio.run(go())
+    t1, t2, t3 = asyncio.run(go())
     assert t1.tool_calls[0]["tool"] == "verify_user" and "U1001" in t1.tool_calls[0]["output"]
     assert t2.tool_calls[0]["tool"] == "return_items" and "8900" in t2.tool_calls[0]["output"]
+    assert t3.guardrail == "card_number"
     rows = open_db(db).execute("SELECT item_id, refund_method FROM returns").fetchall()
     assert [tuple(r) for r in rows] == [("W1043-1", "store_credit")]
 
